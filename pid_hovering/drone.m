@@ -313,6 +313,17 @@ ylabel('Height (m)')
 % save in png as simulacao1b_down.png
 saveas(gcf, 'simulacao1b_down.png')
 
+close all;
+figure()
+% x axis is time in secods, y axis is theta
+plot(out.tout , out.simout_x.Data(:,7), 'LineWidth', 2)
+title('Theta vs Time')
+xlabel('Time (s)')
+ylabel('Theta (rad)')
+% save in png as simulacao1b_theta.png
+saveas(gcf, 'simulacao1b_theta.png')
+
+
 
 
 
