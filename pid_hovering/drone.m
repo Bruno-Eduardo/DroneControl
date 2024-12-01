@@ -24,13 +24,6 @@ m  = 2;                 % mass
 %battery
 Vbat = 15;
 
-/section Desenvolvimento
-/subsection Voo pairado
-/subsubsection Subsistema de atuação
-/subsubsection Subsistema de movimento
-
-/subsection Guiamento Horizontal
-
 
 % Actuation system
 % for each motor (4 motors) we send a delta (0 to 1) of Vbat to the motor
