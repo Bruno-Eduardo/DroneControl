@@ -24,6 +24,14 @@ m  = 2;                 % mass
 %battery
 Vbat = 15;
 
+/section Desenvolvimento
+/subsection Voo pairado
+/subsubsection Subsistema de atuação
+/subsubsection Subsistema de movimento
+
+/subsection Guiamento Horizontal
+
+
 % Actuation system
 % for each motor (4 motors) we send a delta (0 to 1) of Vbat to the motor
 % each motor will rotate its propeller at a speed Omega_[i=1..4]_equilibrium
@@ -35,7 +43,7 @@ Vbat = 15;
 
 G_force_total = m*9.81; % total force acting on the drone
 Force_each_motor = G_force_total/4; % each motor should generate this force
-% Force_each_motor = KQ*Omega^2
+% Force_each_motor = KT*Omega^2
 Omega_equilibrium = sqrt(Force_each_motor/KT(1)); % motor rotation speed at steady state
 Omega = [1 1 1 1]'*Omega_equilibrium;
 % since the propellers are placed to cancel the torque, the total torque should be zero, but for each motor+propeller:
@@ -56,8 +64,8 @@ delta = [1 1 1 1]'*delta_equilibrium;
 i_equilibrium = Kt(1)/Jm(1)*Omega(1) + KQ(1)*Omega(1)^2/B(1);
 
 % recap of linearization
-%x_dot = f(x0,u0) + df/df|{x=x0, u=u0}*(x-x0)   + df/du|{x=x0, u=u0}*(u-u0)
-%x_dot - f(x0,u0) = df/df|{x=x0, u=u0}*(x-x0)   + df/du|{x=x0, u=u0}*(u-u0)
+%x_dot = f(x0,u0) + df/dx|{x=x0, u=u0}*(x-x0)   + df/du|{x=x0, u=u0}*(u-u0)
+%x_dot - f(x0,u0) = df/dx|{x=x0, u=u0}*(x-x0)   + df/du|{x=x0, u=u0}*(u-u0)
 %x_dot -|x_dot_0| =  |---------------|* x_tilde + |----------------|* u_tilde
 %|---------------|=  |---------------|* x_tilde + |----------------|* u_tilde
 % x_dot_tilde     =                  A* x_tilde +                  B* u_tilde
@@ -120,10 +128,10 @@ a22 = dI_dot_di;
 
 b2 = dI_dot_ddelta;
 
-% Applying the Alexandra's super hack at section "4.3.1 Subsistema de atuação", equation 30:
+% Applying the Alexandra's super hack at section "3.4.1 Subsistema de atuação", equation 30:
 % (we need to prove that)
 Ga_0 = (b2*a12/(a11*a22-a12*a21)); % transfer function of Actuation subsystem: G_a(s)=Omega_i(s)/Delta_i(s)
-% Applying the Alexandra's super hack at section "4.3.2 Subsistema de movimento", equation 33:
+% Applying the Alexandra's super hack at section "3.4.2 Subsistema de movimento", equation 33:
 % (we need to prove that)
 % height, roll, pitch and yaw transfer functions are "constant/s^2"
 
@@ -134,7 +142,7 @@ Ga_0 = (b2*a12/(a11*a22-a12*a21)); % transfer function of Actuation subsystem: G
 % where omega_tilde_z subscript indicates "omega_tilde_1 + omega_tilde_2 + omega_tilde_3 + omega_tilde_4"
 % but who is b_z?
 
-%dv/dt = -w*v + R'*g_vec + F_p/m + F_a/m, but w*v on hovering, w*v = 0, R = I, Fa = [0 0 -sum(T_i)]', Fp = [0 0 m*g]'
+%dv/dt = -w*v + R'*g_vec + F_p/m + F_a/m, but w*v on hovering, w*v = 0, R = I, F_a=[0 0 0]'' , F_p = [0 0 -sum(T_i)]', g_vec = [0 0 g]'
 % T_i = KT*Omega_i^2, so -sum(T_i) = -4*KT*Omega^2
 % we just need the vertical component of the acceleration, so
 % dw/dt = g - 4*KT*Omega^2/m (this w is not "omega w", but the vertical speed as in "u,v,w")
@@ -244,8 +252,9 @@ saveas(gcf, 'simulacao1a_down.png')
 
 % -10 degrees is -0.174533 rad, let's try that
 target_speed = 2;
-% for drag constant we are using -0.254274793/2, so
-F_a = -0.254274793/2 * target_speed^2;
+% for drag constant we are using -0.254274793/10, in other words, drone has 10% of the cross section of a human on free fall
+air_constant = 0.254274793/10;
+F_a = -air_constant * target_speed^2;
 % dv/dt = 0 = -w*v + R'*g_vec + F_p/m + F_a/m, if the angle is small, w*v is 0
 % consider rotation matrix R = [a b c; d e f; g h i], so R'*g_vec = [0 0 l]', so
 % syms a b c d e f g h i j k l m n o p q r s t u v w x y z
@@ -276,6 +285,7 @@ target_w = target_speed*sin(target_theta);
 % T_4 = T_2, T_1 = T_3
 % Q_1 + Q_3 = Q_2 + Q_4
 
+% hack: medido impiricamente
 THETAgain_pd(2) = Hgain_pd(2)/10;
 THETAgain_pd(1) = Hgain_pd(1)/10;
 
@@ -299,7 +309,28 @@ plot(out.tout , out.simout_x1.Data(:,2), 'LineWidth', 2)
 title('North, East vs Time')
 xlabel('Time (s)')
 ylabel('Position (m)')
-legend('North', 'East')
+% put legend at corner north east
+grid on
+% we can make a reference line of target_speed*time
+% get last North position, and last time. Get the time before that; the target postition is the last North position + target_speed*(time before that-last time)
+% do that until North postition is 0 or negative
+reference_time_last = out.tout(end);
+reference_position_last = out.simout_x1.Data(end,2);
+reference_time_axis = out.tout(:);
+reference_position = out.simout_x1.Data(:,2)*0;
+reference_position(end) = reference_position_last;
+reference_time_axis(end) = reference_time_last;
+for i = [ length(reference_time_axis)-1:-1:1]
+      reference_position(i) = reference_position(i+1) + (target_speed)*(reference_time_axis(i)-reference_time_axis(i+1));
+      if reference_position(i) <= 0
+            reference_position(i)=0;
+          break;
+      end
+end
+plot(reference_time_axis, reference_position, 'r--', 'LineWidth', 2)
+legend('North', 'East', 'Target speed (2 m/s)', 'Location', 'northwest')
+
+
 % save in png as simulacao1b_north.png
 saveas(gcf, 'simulacao1b_north.png')
 
