@@ -225,3 +225,94 @@ xlabel('Time (s)')
 ylabel('Height (m)')
 % save in png as simulacao1a_down.png
 saveas(gcf, 'simulacao1a_down.png')
+
+
+
+
+
+% Exercício 2
+% Implementar, testar e analisar os controladores de Guiamento Horizontal da seção 4.4 da ultima apostila do curso de Controle de Drones da Profa. Alexandra Moutinho.
+
+% we can use all code and parameters above, but we need to change the stabilization point
+% consider that a drone max speed is 10 km/h, which give 2.77778 m/s, so it is safe to stabilize at 2 m/s
+% we will consider that it will go forward on x, with pitch angle "?" rad (theta will be a small negative angle), so
+% u=2*cos(?), v=0, w=2*sin(?)
+% p=0 rad/s, q=0 rad/s, r=0 rad/s
+% phi=0 rad, theta=? rad, psi=0 rad
+% theta is the pitch, and we can consider that the drone is going forward, so we can consider theta is a small negative number.
+% It will be stable at that point, so all derivatives are zero, and we can linearize around that point
+
+% -10 degrees is -0.174533 rad, let's try that
+target_speed = 2;
+% for drag constant we are using -0.254274793/2, so
+F_a = -0.254274793/2 * target_speed^2;
+% dv/dt = 0 = -w*v + R'*g_vec + F_p/m + F_a/m, if the angle is small, w*v is 0
+% consider rotation matrix R = [a b c; d e f; g h i], so R'*g_vec = [0 0 l]', so
+% syms a b c d e f g h i j k l m n o p q r s t u v w x y z
+% R = [a b c; d e f; g h i];
+% g_vec = [0 0 l]';
+% aux = R'*g_vec; = [g*l h*l i*l]', where l is 9.81 and i is -sin(theta), so
+% so for x axis:
+% 0 = 0 + 9.81*sin(theta) + 0 + F_a/m, so
+% F_a/(m* (-9.81)) = sin(theta), so
+target_theta = asin(F_a/(m* (9.81)));
+target_phi = 0;
+target_psi = 0;
+w = [0 target_theta 0]';
+v = [target_speed*cos(target_theta) 0 target_speed*sin(target_theta)]';
+
+R = [ cos(target_phi)*cos(target_psi),    cos(target_psi)*sin(target_theta)*sin(target_phi) - sin(target_psi)*cos(target_phi),  cos(target_psi)*sin(target_theta)*cos(target_phi) + sin(target_psi)*sin(target_phi);
+      sin(target_psi)*cos(target_theta),  sin(target_psi)*sin(target_theta)*sin(target_phi) + cos(target_psi)*cos(target_phi),  sin(target_psi)*sin(target_theta)*cos(target_phi) - cos(target_psi)*sin(target_phi);
+      -sin(target_theta),                 cos(target_theta)*sin(target_phi),                                                    cos(target_theta)*cos(target_phi)];
+
+F_p = cross(-w,v) +  m * R'* [0 0 9.81]' + 0.254274793/2 * 2^2 * [sin(target_theta) 0 cos(target_theta)]';
+G_force_total = F_p(3);
+
+target_u = target_speed*cos(target_theta);
+target_v = 0;
+target_w = target_speed*sin(target_theta);
+% Momentum is zero, so T4=T2 and T1=T3
+% 0=-J^(-1)*w X J.w + J^(-1)*Mp, so Mp = 0, so
+% T_4 = T_2, T_1 = T_3
+% Q_1 + Q_3 = Q_2 + Q_4
+
+THETAgain_pd(2) = Hgain_pd(2)/10;
+THETAgain_pd(1) = Hgain_pd(1)/10;
+
+% consider that angle should be -0.02 and it is 0, we will add 0.01 of thrust to each motor, so
+% 0.01 = THETAgain_pd(1) * (0 - (-0.02))
+
+K = [ Hgain_pd(2) 0             0               0             Hgain_pd(1) 0             0               0;
+      0           PHIgain_pd(2) 0               0             0           PHIgain_pd(1) 0               0;
+      0           0             THETAgain_pd(2) 0             0           0             THETAgain_pd(1) 0;
+      0           0             0               PSIgain_pd(2) 0           0             0               PSIgain_pd(1)];
+K_reduced = K;
+
+K_reduced = inv(Delta)*K_reduced;
+
+out = sim('simulacao1b');
+close all;
+figure()
+% x axis is time in secods, y axis is North position
+plot(out.tout , out.simout_x1.Data(:,1), 'b','LineWidth', 2), hold on
+plot(out.tout , out.simout_x1.Data(:,2), 'LineWidth', 2)
+title('North, East vs Time')
+xlabel('Time (s)')
+ylabel('Position (m)')
+legend('North', 'East')
+% save in png as simulacao1b_north.png
+saveas(gcf, 'simulacao1b_north.png')
+
+close all;
+figure()
+% x axis is time in secods, y axis is Down, or negative height)
+plot(out.tout , out.simout_x.Data(:,5), 'LineWidth', 2)
+title('Down (negative of height) vs Time')
+xlabel('Time (s)')
+ylabel('Height (m)')
+% save in png as simulacao1b_down.png
+saveas(gcf, 'simulacao1b_down.png')
+
+
+
+
