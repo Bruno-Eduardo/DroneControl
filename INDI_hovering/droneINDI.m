@@ -229,7 +229,7 @@ legend('Down', 'Reference Down')
 title('Down (negative of height) vs Time')
 xlabel('Time (s)')
 ylabel('-Height (m)')
-'save in png as simulacao1a_down.png'
+'save in png as simulacao2a_down.png'
 saveas(gcf, 'simulacao2a_down.png')
 'DONE'
 
@@ -246,4 +246,69 @@ xlabel('Time (s)')
 ylabel('Acceleration (m/s^2)')
 'save in png as simulacao1a_down_acceleration.png'
 saveas(gcf, 'simulacao2a_down_acceleration.png')
+'DONE'
+
+
+target_speed = 2;
+air_constant = 0.254274793/10;
+F_a = -air_constant * target_speed^2;
+target_theta = asin(F_a/(m* (9.81)));
+
+
+G_force_total_with_theta = m*9.81/cos(target_theta); % total force acting on the drone
+Force_each_motor_with_theta = G_force_total_with_theta/4; % each motor should generate this force
+Omega_equilibrium_with_theta = sqrt(Force_each_motor_with_theta/KT(1)); % motor rotation speed at steady state
+Omega_with_theta = [1 1 1 1]'*Omega_equilibrium_with_theta;
+delta_equilibrium_with_theta = (Ke(1)*Omega_with_theta(1) + R(1)*(KQ(1)*Omega_with_theta(1) + B(1))*Omega_with_theta(1)/Kt(1))/Vbat;
+
+%simulacao2b
+close all;
+'simulation will take 20s + compile time (if needed)'
+out = sim('simulacao2b');
+'simulation is done'
+close all;
+figure()
+% x axis is time in secods, y axis is Down, or negative height
+'plot will take 10 seconds'
+plot(out.tout , out.simout_x(:,1), 'LineWidth', 2); hold on;
+plot(out.tout , out.simout_x1(:,1), 'LineWidth', 2); hold on;
+legend('Down', 'Reference Down')
+'plot is done'
+title('Down (negative of height) vs Time')
+xlabel('Time (s)')
+ylabel('-Height (m)')
+'save in png as simulacao2b_down.png'
+saveas(gcf, 'simulacao2b_down.png')
+
+% down acceleration is irrelevant, since the drone is now moving north
+% theta accel is at simout_x3, reference theta is at simout_x5, theta is at simout_x4
+
+close all;
+figure()
+% x axis is time in secods, y axis is acceleration
+'plot will take 10 seconds'
+plot(out.tout , out.simout_x3(:,1), 'LineWidth', 2); hold on;
+legend('Reference Theta acceleration')
+'plot is done'
+title('Theta acceleration vs Time')
+xlabel('Time (s)')
+ylabel('Acceleration (rad/s^2)')
+%vertical axis from -1 to 3
+%axis([0 150 -1 3])
+'save in png as simulacao2b_theta_acceleration.png'
+saveas(gcf, 'simulacao2b_theta_acceleration.png')
+
+close all;
+figure()
+% x axis is time in secods, y axis is theta
+'plot will take 10 seconds'
+plot(out.tout , out.simout_x4(:,1), 'LineWidth', 3); hold on;
+plot(out.tout , out.simout_x5(:,1), 'LineWidth', 2); hold on;
+legend('Theta', 'Reference Theta')
+'plot is done'
+title('Theta vs Time')
+xlabel('Time (s)')
+ylabel('Theta (rad)')
+'save in png as simulacao2b_theta.png'
+saveas(gcf, 'simulacao2b_theta.png')
 'DONE'
