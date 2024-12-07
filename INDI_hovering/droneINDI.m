@@ -311,4 +311,47 @@ xlabel('Time (s)')
 ylabel('Theta (rad)')
 'save in png as simulacao2b_theta.png'
 saveas(gcf, 'simulacao2b_theta.png')
+
+
+close all;
+figure()
+% x axis is time in secods, y axis is North position
+plot(out.tout , out.simout_x6(:,1), 'b','LineWidth', 2), hold on
+plot(out.tout , out.simout_x7(:,1), 'LineWidth', 2)
+title('North, East vs Time')
+xlabel('Time (s)')
+ylabel('Position (m)')
+% put legend at corner north east
+grid on
+% we can make a reference line of target_speed*time
+% get last North position, and last time. Get the time before that; the target postition is the last North position + target_speed*(time before that-last time)
+% do that until North postition is 0 or negative
+reference_time_last = out.tout(end);
+reference_position_last = out.simout_x6(end,1);
+reference_time_axis = out.tout(:);
+reference_position = out.simout_x6(:,1)*0;
+reference_position(end) = reference_position_last;
+reference_time_axis(end) = reference_time_last;
+for i = [ length(reference_time_axis)-1:-1:1]
+      reference_position(i) = reference_position(i+1) + (target_speed)*(reference_time_axis(i)-reference_time_axis(i+1));
+      if reference_position(i) <= 0
+            reference_position(i)=0;
+          break;
+      end
+end
+plot(reference_time_axis, reference_position, 'r--', 'LineWidth', 2)
+legend('North', 'East', 'Target speed (2 m/s)', 'Location', 'northwest')
+
+
+% save in png as simulacao1b_north.png
+saveas(gcf, 'simulacao1b_north.png')
+
+
+
+
+
+
+
+
+
 'DONE'
