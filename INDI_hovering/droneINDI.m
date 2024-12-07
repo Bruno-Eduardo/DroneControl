@@ -244,7 +244,7 @@ legend('Reference Down acceleration (with boost)', 'Reference Down acceleration'
 title('Down acceleration vs Time')
 xlabel('Time (s)')
 ylabel('Acceleration (m/s^2)')
-'save in png as simulacao1a_down_acceleration.png'
+'save in png as simulacao2a_down_acceleration.png'
 saveas(gcf, 'simulacao2a_down_acceleration.png')
 'DONE'
 
@@ -343,8 +343,8 @@ plot(reference_time_axis, reference_position, 'r--', 'LineWidth', 2)
 legend('North', 'East', 'Target speed (2 m/s)', 'Location', 'northwest')
 
 
-% save in png as simulacao1b_north.png
-saveas(gcf, 'simulacao1b_north.png')
+% save in png as simulacao2b_north.png
+saveas(gcf, 'simulacao2b_north.png')
 
 
 
